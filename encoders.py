@@ -7,7 +7,7 @@ from urllib.parse import (
     unquote,
     unquote_plus,
 )
-from constants import EncodingFormat
+from constants import EncodingFormat, BASE64SAFE_CHARSET
 
 
 type EncoderFn = Callable[[bytes], str]
@@ -30,6 +30,19 @@ def encode_base64url(data: bytes) -> str:
 def decode_base64url(data: str) -> bytes:
     cleaned = "".join(data.split())
     return b64.urlsafe_b64decode(cleaned)
+
+
+def encode_base64safe(data: bytes) -> str:
+    """URL-safe Base64 without padding (RFC 4648 sec 5, no '=')."""
+    return b64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
+
+
+def decode_base64safe(data: str) -> bytes:
+    """Decode unpadded URL-safe Base64; re-adds padding automatically."""
+    cleaned = "".join(data.split())
+    # Re-add missing '=' padding so urlsafe_b64decode accepts it
+    padding = (4 - len(cleaned) % 4) % 4
+    return b64.urlsafe_b64decode(cleaned + "=" * padding)
 
 
 def encode_base32(data: bytes) -> str:
@@ -71,6 +84,7 @@ ENCODER_REGISTRY: dict[
 ] = {
     EncodingFormat.BASE64: (encode_base64, decode_base64),
     EncodingFormat.BASE64URL: (encode_base64url, decode_base64url),
+    EncodingFormat.BASE64SAFE: (encode_base64safe, decode_base64safe),
     EncodingFormat.BASE32: (encode_base32, decode_base32),
     EncodingFormat.HEX: (encode_hex, decode_hex),
     EncodingFormat.URL: (

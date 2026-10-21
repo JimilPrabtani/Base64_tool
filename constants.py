@@ -4,6 +4,7 @@ from typing import Final
 class EncodingFormat(StrEnum):
     BASE64 = "base64"
     BASE64URL = "base64url"
+    BASE64SAFE = "base64safe"
     BASE32 = "base32"
     HEX = "hex"
     URL = "url"
@@ -56,6 +57,8 @@ class ScoreWeight:
 BASE64_CHARSET: Final[frozenset[str]] = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
 
 BASE64URL_CHARSET: Final[frozenset[str]] = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_=")
+
+BASE64SAFE_CHARSET: Final[frozenset[str]] = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 
 BASE32_CHARSET: Final[frozenset[str]] = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=")
 

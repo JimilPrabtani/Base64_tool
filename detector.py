@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from constants import (
     BASE32_CHARSET,
     BASE64_CHARSET,
+    BASE64SAFE_CHARSET,
     BASE64URL_CHARSET,
     HEX_CHARSET,
     CONFIDENCE_THRESHOLD,
@@ -81,6 +82,35 @@ def _score_base64url(data: str) -> float:
         return 0.0
 
     decoded = try_decode(stripped, EncodingFormat.BASE64URL)
+    if decoded is None:
+        return 0.0
+    score += W.DECODE_SUCCESS
+    if is_printable_text(decoded):
+        score += W.PRINTABLE_RESULT
+
+    return min(score, 1.0)
+
+
+def _score_base64safe(data: str) -> float:
+    """Score likelihood that data is unpadded URL-safe Base64 (e.g. JWT segments)."""
+    stripped = "".join(data.split())
+    if len(stripped) < MIN_INPUT_LENGTH:
+        return 0.0
+    if not all(c in BASE64SAFE_CHARSET for c in stripped):
+        return 0.0
+    # Must have at least one URL-safe char and NO standard +/ chars
+    has_url_chars = any(c in stripped for c in "-_")
+    has_std_chars = any(c in stripped for c in "+/")
+    has_padding  = "=" in stripped
+    if has_std_chars or has_padding:
+        return 0.0
+    if not has_url_chars:
+        return 0.0
+
+    score = W.B64URL_BASE
+    score += W.B64URL_SAFE_CHARS
+
+    decoded = try_decode(stripped, EncodingFormat.BASE64SAFE)
     if decoded is None:
         return 0.0
     score += W.DECODE_SUCCESS
@@ -193,6 +223,7 @@ _SCORERS: dict[EncodingFormat,
                         float]] = {
                             EncodingFormat.BASE64: _score_base64,
                             EncodingFormat.BASE64URL: _score_base64url,
+                             EncodingFormat.BASE64SAFE: _score_base64safe,
                             EncodingFormat.BASE32: _score_base32,
                             EncodingFormat.HEX: _score_hex,
                             EncodingFormat.URL: _score_url,
